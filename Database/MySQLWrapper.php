@@ -16,7 +16,7 @@ class MySQLWrapper extends mysqli {
         parent::__construct($hostname, $username, $password, $database, $port, $socket);
     }
     
-    //　デフォルトのデータベース名を取得
+    //　デフォルトのデータベースを取得
     public function getDatabaseName(): string {
         return $this->query("SELECT database() AS the_db")->fetch_row()[0];
     }
