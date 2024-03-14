@@ -5,7 +5,7 @@ use Database\MySQLWrapper;
 $mysqli = new MySQLWrapper();
 
 // Carテーブル
-$car_create_query = "
+const CREATE_CAR_TABLE_QUERY = "
 CREATE TABLE IF NOT EXISTS Car (
 id INT PRIMARY KEY AUTO_INCREMENT,
 make VARCHAR(50),
@@ -20,14 +20,8 @@ status VARCHAR(10)
 );
 ";
 
-$result = $mysqli->query($car_create_query);
-
-if (!$result)
-    throw new Exception('Carテーブルのセットアップクエリを実行できませんでした');
-else
-    print("Carテーブルのセットアップクエリを実行しました" . PHP_EOL);
-
-$part_create_query = "
+// Partテーブル
+const CREATE_PART_TABLE_QUERY = "
     CREATE TABLE IF NOT EXISTS Part (
         id INT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(50),
@@ -37,43 +31,83 @@ $part_create_query = "
     );
 ";
 
-$result = $mysqli->query($part_create_query);
-
-if (!$result)
-    throw new Exception('Partテーブルのセットアップクエリを実行できませんでした');
-else
-    print("Partテーブルのセットアップクエリを実行しました" . PHP_EOL);
-
-// CarPartテーブル
-$car_part_create_query = "
+// CarPartテーブル(中間テーブル)
+const CREATE_CAR_PART_TABLE_QUERY = "
     CREATE TABLE IF NOT EXISTS CarPart (
         carId INT, FOREIGN KEY(carId) REFERENCES Car(id),
         partId INT, FOREIGN KEY(partId) REFERENCES Part(id),
         quantity INT
     );
 ";
+function insertCarQuery(
+    string $make,
+    string $model,
+    int $year,
+    string $color,
+    float $price,
+    float $mileage,
+    string $transmission,
+    string $engine,
+    string $status
+): string {
+    return sprintf("
+        INSERT INTO Car (make, model, year, color, price, milegage, transmission, engine, status)
+        VALUES ('%s', '%s', %d, '%s', %f, %f, '%s', '%s', '%s');
+    ", $make, $model, $year, $color, $price, $mileage, $transmission, $engine, $status);
+}
+;
 
-$result = $mysqli->query($car_part_create_query);
-if (!$result)
-    throw new Exception('CarPartテーブルのセットアップクエリを実行できませんでした');
-else
-    print("CarPartテーブルのセットアップクエリを実行しました" . PHP_EOL);
+function insertPartQuery(
+    string $name,
+    string $description,
+    float $price,
+    int $quantityInStock
+): string {
+    return sprintf("
+        INSERT INTO Part (name, description, price, quantityInStock)
+        VALUES ('%s', '%s', %f, %d);
+    ", $name, $description, $price, $quantityInStock);
+}
+
+function insertCarPartQuery(
+    int $carId,
+    int $partId,
+    int $quantity
+): string {
+    return sprintf("
+        INSERT INTO CarPart (carId, partId, quantity)
+        VALUES (%d, %d, %d);
+    ", $carId, $partId, $quantity);
+}
+
+function runQuery(mysqli $mysqli, string $query): void
+{
+    $result = $mysqli->query($query);
+    if (!$result) {
+        throw new Exception('クエリを実行できませんでした');
+    } else {
+        print("クエリを実行しました" . PHP_EOL);
+    }
+}
+
+
 
 // Carのデータ
-$car_insert_query = "
-    INSERT INTO Car (make, model, year, color, price, milegage, transmission, engine, status) 
-    VALUES 
-        ('Toyota', 'Camry', 2018, 'White', 20000, 10000, 'Automatic', 'V6', 'New'), 
-        ('Honda', 'Civic', 2017, 'Black', 15000, 8000, 'Automatic', 'V4', 'Used'), 
-        ('Nissan', 'Altima', 2016, 'Red', 18000, 9000, 'Automatic', 'V6', 'Used'), 
-        ('Ford', 'Fusion', 2015, 'Blue', 16000, 8500, 'Automatic', 'V4', 'Used')
-";
-
-$result = $mysqli->query($car_insert_query);
-if (!$result)
-    throw new Exception('Carテーブルのデータを挿入できませんでした');
-else
-    print("Carテーブルにデータを挿入しました" . PHP_EOL);
+runQuery($mysqli, CREATE_CAR_TABLE_QUERY);
+runQuery(
+    $mysqli,
+    insertCarQuery(
+        'Toyota',
+        'Camry',
+        2018,
+        'White',
+        20000,
+        10000,
+        'Automatic',
+        'V6',
+        'New'
+    )
+);
 
 // Partのデータ
 $part_insert_query = "
@@ -84,12 +118,16 @@ $part_insert_query = "
         ('Air Filter', 'Air Filter for Engine', 15, 100), 
         ('Headlight', 'Front Headlight', 50, 100)
 ";
-
-$result = $mysqli->query($part_insert_query);
-if (!$result)
-    throw new Exception('Partテーブルのデータを挿入できませんでした');
-else
-    print("Partテーブルにデータを挿入しました" . PHP_EOL);
+runQuery($mysqli, CREATE_PART_TABLE_QUERY);
+runQuery(
+    $mysqli,
+    insertPartQuery(
+        'Brake Pads',
+        'Front and Rear Brake Pads',
+        100,
+        50
+    )
+);
 
 // CarPartのデータ
 $car_part_insert_query = "
@@ -100,12 +138,15 @@ $car_part_insert_query = "
         (3, 1, 2), (3, 2, 2), (3, 3, 2), (3, 4, 2), 
         (4, 1, 1), (4, 2, 1), (4, 3, 1), (4, 4, 1)
 ";
-
-$result = $mysqli->query($car_part_insert_query);
-if (!$result)
-    throw new Exception('CarPartテーブルのデータを挿入できませんでした');
-else
-    print("CarPartテーブルにデータを挿入しました" . PHP_EOL);
+runQuery($mysqli, CREATE_CAR_PART_TABLE_QUERY);
+runQuery(
+    $mysqli,
+    insertCarPartQuery(
+        1,
+        1,
+        2
+    )
+);
 
 echo "データの挿入が完了しました" . PHP_EOL;
 

@@ -17,6 +17,7 @@ $ops = getopt('', ['migrate']);
 if (isset($ops['migrate'])) {
     printf('Database migration started' . PHP_EOL);
     include('Database/setup.php');
+    include('Database/setup1.php');
     printf('Database migration finished' . PHP_EOL);
 }
 
